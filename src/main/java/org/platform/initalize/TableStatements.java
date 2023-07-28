@@ -6,6 +6,6 @@ public interface TableStatements {
             + "	email text NOT NULL,\n"
             + "	password text NOT NULL,\n"
             + "	role text NOT NULL,\n"
-            + "	created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,\n"
+            + "	created timestamp with time zone DEFAULT CURRENT_TIMESTAMP\n"
             + ");";
 }

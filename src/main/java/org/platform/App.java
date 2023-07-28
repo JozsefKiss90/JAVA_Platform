@@ -4,22 +4,34 @@ import org.platform.database.Database;
 import org.platform.initalize.TableInitializer;
 import org.platform.initalize.TableStatements;
 import org.platform.service.UserService;
-
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
 import java.util.Map;
 
+@SpringBootApplication
 public class App {
+
     public static void main(String[] args) {
-        Database database = new Database(
-                "jdbc:postgresql://localhost:5432/invoice",
-                "postgres",
-                "postgres");
+        SpringApplication.run(App.class, args);
+    }
+
+    @Bean
+    public TableInitializer tableInitializer(DataSource dataSource) {
         Map<String, String> tables = Map.of(
                 "user", TableStatements.USER
         );
 
-        TableInitializer tableInitializer = new TableInitializer(database, tables);
-        tableInitializer.initialize();
+        return new TableInitializer(new Database(dataSource), tables);
+    }
 
-        UserService userService = new UserService(database);
+    @Bean
+    public CommandLineRunner commandLineRunner(UserService userService, TableInitializer tableInitializer) {
+        return args -> {
+            tableInitializer.initialize();
+        };
     }
 }

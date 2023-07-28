@@ -1,28 +1,22 @@
 package org.platform.database;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Database {
-    private final String url;
-    private final String username;
-    private final String password;
+    private final DataSource dataSource;
 
-    public Database(String url, String username, String password) {
-        this.url = url;
-        this.username = username;
-        this.password = password;
+    public Database(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
-
 
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(url, username, password);
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             System.err.println("Could not create database connection.");
             throw new RuntimeException(ex);
         }
     }
 }
-

@@ -1,80 +1,59 @@
 package org.platform.service;
 
-import org.platform.database.Database;
 import org.platform.data.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Service;
 
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Date;
 
+@Service
 public class UserService {
 
-    private final Database database;
+    private final JdbcTemplate jdbcTemplate;
 
-    public UserService(Database database) {
-        this.database = database;
+    @Autowired
+    public UserService(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
+    // Create operation
     public void save(User user) {
-        String template = "INSERT INTO user (username, email, password, role, created) VALUES (?, ?, ?, ?, ?)";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(template)) {
-            statement.setString(1, user.username());
-            statement.setString(2, user.email());
-            statement.setString(3, user.password());
-            statement.setString(4, user.role());
-            statement.setDate(5, new java.sql.Date(user.created().getTime()));
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        String sql = "INSERT INTO users (username, email, password, role, created) VALUES (?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, user.username(), user.email(), user.password(), user.role(), new Date(user.created().getTime()));
+    }
+
+    // Read operation
+    public User getUser(String username) {
+        String sql = "SELECT * FROM users WHERE username = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{username}, new UserRowMapper());
     }
 
     // Update operation
     public void updateUser(User user) {
-        String template = "UPDATE user SET email = ?, password = ?, role = ?, created = ? WHERE username = ?";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(template)) {
-            statement.setString(1, user.email());
-            statement.setString(2, user.password());
-            statement.setString(3, user.role());
-            statement.setDate(4, new java.sql.Date(user.created().getTime()));
-            statement.setString(5, user.username());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User getUser(String username) {
-        User user = null;
-        String template = "SELECT * FROM user WHERE username = ?";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(template)) {
-            statement.setString(1, username);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                user = new User(
-                        resultSet.getString("username"),
-                        resultSet.getString("email"),
-                        resultSet.getString("password"), // Reminder: storing passwords in plaintext is a bad practice. Always hash + salt your passwords!
-                        resultSet.getString("role"),
-                        resultSet.getDate("created")
-                );
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return user;
+        String sql = "UPDATE users SET email = ?, password = ?, role = ?, created = ? WHERE username = ?";
+        jdbcTemplate.update(sql, user.email(), user.password(), user.role(), new Date(user.created().getTime()), user.username());
     }
 
     // Delete operation
     public void deleteUser(String username) {
-        String template = "DELETE FROM user WHERE username = ?";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(template)) {
-            statement.setString(1, username);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        String sql = "DELETE FROM users WHERE username = ?";
+        jdbcTemplate.update(sql, username);
+    }
+
+    class UserRowMapper implements RowMapper<User> {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return new User(
+                    rs.getString("username"),
+                    rs.getString("email"),
+                    rs.getString("password"), // Storing passwords in plaintext is a bad practice. Always hash + salt your passwords!
+                    rs.getString("role"),
+                    rs.getDate("created")
+            );
         }
     }
 }
