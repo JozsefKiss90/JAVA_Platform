@@ -20,15 +20,6 @@ public class App {
     }
 
     @Bean
-    public TableInitializer tableInitializer(DataSource dataSource) {
-        Map<String, String> tables = Map.of(
-                "user", TableStatements.USER
-        );
-
-        return new TableInitializer(new Database(dataSource), tables);
-    }
-
-    @Bean
     public CommandLineRunner commandLineRunner(UserService userService, TableInitializer tableInitializer) {
         return args -> {
             tableInitializer.initialize();

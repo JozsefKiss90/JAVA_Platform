@@ -1,6 +1,6 @@
 package org.platform.service;
 
-import org.platform.data.User;
+import org.platform.data.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -20,34 +20,30 @@ public class UserService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Create operation
-    public void save(User user) {
+    public void save(UserDTO userDTO) {
         String sql = "INSERT INTO users (username, email, password, role, created) VALUES (?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, user.username(), user.email(), user.password(), user.role(), new Date(user.created().getTime()));
+        jdbcTemplate.update(sql, userDTO.username(), userDTO.email(), userDTO.password(), userDTO.role(), new Date(userDTO.created().getTime()));
     }
 
-    // Read operation
-    public User getUser(String username) {
+    public UserDTO getUser(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{username}, new UserRowMapper());
     }
 
-    // Update operation
-    public void updateUser(User user) {
+    public void updateUser(String username, UserDTO userDTO) {
         String sql = "UPDATE users SET email = ?, password = ?, role = ?, created = ? WHERE username = ?";
-        jdbcTemplate.update(sql, user.email(), user.password(), user.role(), new Date(user.created().getTime()), user.username());
+        jdbcTemplate.update(sql, userDTO.email(), userDTO.password(), userDTO.role(), new Date(userDTO.created().getTime()), userDTO.username());
     }
 
-    // Delete operation
     public void deleteUser(String username) {
         String sql = "DELETE FROM users WHERE username = ?";
         jdbcTemplate.update(sql, username);
     }
 
-    class UserRowMapper implements RowMapper<User> {
+    class UserRowMapper implements RowMapper<UserDTO> {
         @Override
-        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return new User(
+        public UserDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return new UserDTO(
                     rs.getString("username"),
                     rs.getString("email"),
                     rs.getString("password"), // Storing passwords in plaintext is a bad practice. Always hash + salt your passwords!

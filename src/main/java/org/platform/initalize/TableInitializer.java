@@ -1,20 +1,20 @@
 package org.platform.initalize;
 
-import org.platform.database.Database;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
 public class TableInitializer {
-    private final Database database;
+    private final JdbcTemplate jdbcTemplate;
     private final Map<String, String> tables;
 
-    public TableInitializer(Database database, Map<String, String> tables) {
-        this.database = database;
-        this.tables = tables;
+    @Autowired
+    public TableInitializer(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.tables = Map.of("user", TableStatements.USER);
     }
 
     public void initialize() {
@@ -25,31 +25,13 @@ public class TableInitializer {
 
     private boolean exists(Map.Entry<String, String> table) {
         String tableName = table.getKey();
-        try (Connection connection = database.getConnection();
-             ResultSet resultSet = connection.getMetaData()
-                     .getTables(null, null, null, new String[]{"TABLE"})) {
-            while (resultSet.next()) {
-                String name = resultSet.getString("TABLE_NAME");
-                if (tableName.equalsIgnoreCase(name)) {
-                    System.out.println("Table detected = " + name);
-                    return true;
-                }
-            }
-            return false;
-        } catch (SQLException ex) {
-            System.err.println("Could not determine whether the table exists: " + tableName);
-            throw new RuntimeException(ex);
-        }
+        String sql = "SELECT count(*) FROM information_schema.tables WHERE table_name = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, tableName);
+        return count != null && count > 0;
     }
 
     private void create(Map.Entry<String, String> table) {
-        try (Connection connection = database.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate(table.getValue());
-            System.out.println("Table created = " + table.getKey());
-        } catch (SQLException ex) {
-            System.err.println("Could not create table: " + table.getKey());
-            throw new RuntimeException(ex);
-        }
+        jdbcTemplate.execute(table.getValue());
+        System.out.println("Table created = " + table.getKey());
     }
 }
