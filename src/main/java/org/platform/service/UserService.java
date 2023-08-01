@@ -1,55 +1,81 @@
 package org.platform.service;
 
-import org.platform.data.UserDTO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Service;
+import org.platform.database.Database;
+import org.platform.data.User;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Date;
+import java.sql.*;
 
-@Service
 public class UserService {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final Database database;
 
-    @Autowired
-    public UserService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public UserService(Database database) {
+        this.database = database;
     }
 
-    public void save(UserDTO userDTO) {
-        String sql = "INSERT INTO users (username, email, password, role, created) VALUES (?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, userDTO.username(), userDTO.email(), userDTO.password(), userDTO.role(), new Date(userDTO.created().getTime()));
+    public void save(User user) {
+        String template = "INSERT INTO users (username, email, password, role, created) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(template)) {
+            statement.setString(1, user.username());
+            statement.setString(2, user.email());
+            statement.setString(3, user.password());
+            statement.setString(4, user.role());
+            statement.setDate(5, new java.sql.Date(user.created().getTime()));
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public UserDTO getUser(String username) {
-        String sql = "SELECT * FROM users WHERE username = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{username}, new UserRowMapper());
+    // Read operation
+    public User getUser(String username) {
+        User user = null;
+        String template = "SELECT * FROM users WHERE username = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(template)) {
+            statement.setString(1, username);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                user = new User(
+                        resultSet.getString("username"),
+                        resultSet.getString("email"),
+                        resultSet.getString("password"), // Reminder: storing passwords in plaintext is a bad practice. Always hash + salt your passwords!
+                        resultSet.getString("role"),
+                        resultSet.getDate("created")
+                );
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return user;
     }
 
-    public void updateUser(String username, UserDTO userDTO) {
-        String sql = "UPDATE users SET email = ?, password = ?, role = ?, created = ? WHERE username = ?";
-        jdbcTemplate.update(sql, userDTO.email(), userDTO.password(), userDTO.role(), new Date(userDTO.created().getTime()), userDTO.username());
+    // Update operation
+    public void updateUser(User user) {
+        String template = "UPDATE users SET email = ?, password = ?, role = ?, created = ? WHERE username = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(template)) {
+            statement.setString(1, user.username());
+            statement.setString(2, user.email());
+            statement.setString(3, user.password());
+            statement.setString(4, user.role());
+            statement.setDate(5, new java.sql.Date(user.created().getTime()));
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
+    // Delete operation
     public void deleteUser(String username) {
-        String sql = "DELETE FROM users WHERE username = ?";
-        jdbcTemplate.update(sql, username);
-    }
-
-    class UserRowMapper implements RowMapper<UserDTO> {
-        @Override
-        public UserDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return new UserDTO(
-                    rs.getString("username"),
-                    rs.getString("email"),
-                    rs.getString("password"), // Storing passwords in plaintext is a bad practice. Always hash + salt your passwords!
-                    rs.getString("role"),
-                    rs.getDate("created")
-            );
+        String template = "DELETE FROM users WHERE username = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(template)) {
+            statement.setString(1, username);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -1,12 +1,12 @@
 package org.platform.controller;
 
-import org.platform.data.UserDTO;
+import org.platform.data.User;
 import org.platform.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+
 @RequestMapping("/api/users")
 public class UserController {
 
@@ -17,25 +17,24 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody UserDTO userDto) {
+    public ResponseEntity<?> createUser(@RequestBody User user) {
         try {
-            userService.save(userDto);
+            userService.save(user);
             return new ResponseEntity<>("User created successfully", HttpStatus.OK);
         } catch (Exception e) {
-            // Log the exception if needed
             return new ResponseEntity<>("An error occurred while creating the user", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-
     @GetMapping("/{username}")
-    public UserDTO getUser(@PathVariable String username) {
+    public User getUser(@PathVariable String username) {
         return userService.getUser(username);
     }
 
     @PutMapping("/{username}")
-    public void updateUser(@PathVariable String username, @RequestBody UserDTO userDto) {
-        userService.updateUser(username, userDto);
+    public void updateUser(@PathVariable String username, @RequestBody User user) {
+        User user1 = userService.getUser(username);
+        userService.updateUser(user1);
     }
 
     @DeleteMapping("/{username}")
