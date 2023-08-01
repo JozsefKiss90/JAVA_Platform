@@ -1,7 +1,5 @@
 package org.platform.database;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -17,6 +15,7 @@ public class Database {
 
     public Connection getConnection() {
         try {
+            System.out.println("Connected to database.");
             return dataSource.getConnection();
         } catch (SQLException ex) {
             System.err.println("Could not create database connection.");

@@ -1,8 +1,6 @@
 package org.platform.initalize;
 
 import org.platform.database.Database;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,12 +8,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
-@Service
 public class TableInitializer {
     private final Database database;
     private final Map<String, String> tables;
 
-    @Autowired
     public TableInitializer(Database database) {
         this.database = database;
         this.tables = Map.of("user", TableStatements.USER);
