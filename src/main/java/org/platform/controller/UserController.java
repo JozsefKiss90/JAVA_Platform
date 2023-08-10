@@ -1,6 +1,7 @@
 package org.platform.controller;
 
-import org.platform.data.UserDTO;
+import org.platform.model.dto.UserDTO;
+import org.platform.model.user.User;
 import org.platform.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserDTO userDto) {
         try {
-            userService.save(userDto);
+            userService.createUser(userDto);
             return new ResponseEntity<>("User created successfully", HttpStatus.OK);
         } catch (Exception e) {
             // Log the exception if needed
@@ -29,8 +30,8 @@ public class UserController {
 
 
     @GetMapping("/{username}")
-    public UserDTO getUser(@PathVariable String username) {
-        return userService.getUser(username);
+    public User getUser(@PathVariable String username) {
+        return userService.findUser(username);
     }
 
     @PutMapping("/{username}")
